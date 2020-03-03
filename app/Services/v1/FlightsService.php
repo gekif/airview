@@ -2,8 +2,8 @@
 
 namespace App\Services\v1;
 
+use App\Airport;
 use App\Flight;
-use function Symfony\Component\Debug\Tests\testHeader;
 
 class FlightsService
 {
@@ -34,6 +34,35 @@ class FlightsService
             ->get();
 
         return $this->filterFlights($flights, $withKeys);
+    }
+
+
+    public function createFlight($request)
+    {
+        $arrivalAirport = $request->input('arrival.iataCode');
+
+        $departureAirport = $request->input('departure.iataCode');
+
+        $airports = Airport::whereIn('iataCode', [$arrivalAirport, $departureAirport]);
+
+        $codes = [];
+
+        foreach ($airports as $airport) {
+            $codes[$airport->iataCode] = $airport->id;
+        }
+
+        $flight = new Flight();
+
+        $flight->flightNumber = $request->input('flightNumber');
+        $flight->status = $request->input('status');
+        $flight->arrivalAirport_id = $codes[$arrivalAirport];
+        $flight->arrivalDateTime = $request->input('arrival.datetime');
+        $flight->departureAirport_id = $codes[$departureAirport];
+        $flight->departureDateTime = $request->input('departure.datetime');
+
+        $flight->save();
+
+        return $this->filterFlights([$flight]);
     }
 
 
