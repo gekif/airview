@@ -3,12 +3,33 @@
 namespace App\Services\v1;
 
 use App\Flight;
+use function Symfony\Component\Debug\Tests\testHeader;
 
 class FlightsService
 {
-    public function getFlights()
+    protected $supportedIncludes = [
+        'arrivalAirport' => 'arrival',
+        'departureAirport' => 'departure'
+    ];
+
+
+    public function getFlights($parameters)
     {
-        return $this->filterFlights(Flight::all());
+        if (empty($parameters)) {
+            return $this->filterFlights(Flight::all());
+        }
+
+        $withKeys = [];
+
+        if (isset($parameters['include'])) {
+            $includeParams = explode(',', $parameters['include']);
+
+            $includes = array_intersect($this->supportedIncludes, $includeParams);
+
+            $withKeys = array_keys($includes);
+        }
+
+        return $this->filterFlights(Flight::with($withKeys)->get(), $withKeys);
     }
 
 
@@ -20,7 +41,7 @@ class FlightsService
     }
 
 
-    protected function filterFlights($flights)
+    protected function filterFlights($flights, $keys = [])
     {
         $data = [];
 
@@ -31,8 +52,25 @@ class FlightsService
                 'href' => route('flights.show', [
                     'id' => $flight->flightNumber
                 ]),
-
             ];
+
+            if (in_array('arrivalAirport', $keys)) {
+                $entry['arrival'] = [
+                    'datetime' => $flight->arrivalDateTime,
+                    'iataCode' => $flight->arrivalAirport->iataCode,
+                    'city' => $flight->arrivalAirport->city,
+                    'state' => $flight->arrivalAirport->state
+                ];
+            }
+
+            if (in_array('departureAirport', $keys)) {
+                $entry['departure'] = [
+                    'datetime' => $flight->departureDateTime,
+                    'iataCode' => $flight->departureAirport->iataCode,
+                    'city' => $flight->departureAirport->city,
+                    'state' => $flight->departureAirport->state
+                ];
+            }
 
             $data[] = $entry;
         }
