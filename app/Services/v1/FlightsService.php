@@ -66,6 +66,62 @@ class FlightsService
     }
 
 
+    public function updateFlight($req, $flightNumber)
+    {
+        $flight = Flight::where('flightNumber', $flightNumber)->firstOrFail();
+
+        $arrivalAirport = $req->input('arrival.iataCode');
+
+        $departureAirport = $req->input('departure.iataCode');
+
+        $airports = Airport::whereIn('iataCode', ['arrivalAirport', 'departureAirport'])->get();
+
+        $codes = [];
+
+        foreach ($airports as $port) {
+            $codes[$port->iataCode] = $port->id;
+        }
+
+        $flight->flightNumber = $req->input('flightNumber');
+        $flight->status = $req->input('status');
+        $flight->arrivalAirport_id = $codes[$arrivalAirport];
+        $flight->arrivalDateTime = $req->input('arrival.datetime');
+        $flight->depatureAirport_id = $codes[$departureAirport];
+        $flight->depatureDateTime = $req->input('departure.datetime');
+
+        $flight->save();
+
+        return $this->filterFlights([$flight]);
+    }
+
+
+    public function deleteFlight($flightNumber)
+    {
+        $flight = Flight::where('flightNumber', $flightNumber)->firstOrFail();
+
+        $arrivalAirport = $req->input('arrival.iataCode');
+
+        $departureAirport = $req->input('departure.iataCode');
+
+        $airports = Airport::whereIn('iataCode', ['arrivalAirport', 'departureAirport'])->get();
+
+        $codes = [];
+
+        foreach ($airports as $port) {
+            $codes[$port->iataCode] = $port->id;
+        }
+
+        $flight->flightNumber = $req->input('flightNumber');
+        $flight->status = $req->input('status');
+        $flight->arrivalAirport_id = $codes[$arrivalAirport];
+        $flight->arrivalDateTime = $req->input('arrival.datetime');
+        $flight->depatureAirport_id = $codes[$departureAirport];
+        $flight->depatureDateTime = $req->input('departure.datetime');
+
+        $flight->delete();
+    }
+
+
     protected function filterFlights($flights, $keys = [])
     {
         $data = [];
